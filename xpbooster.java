@@ -20,17 +20,24 @@ public class Xpbooster extends Plugin
 	@Inject
 	private Client client;
 
-	private static final String TOTAL_LEVEL_TEXT_PREFIX = "Total level:<br>";
+	private HashMap<Skill, Integer> skillToChildId = new HashMap<>();
+
+	private final String TOTAL_LEVEL_TEXT_PREFIX = "Total level:<br>";
 
 	HashMap<Skill, Integer> realXpTracker = new HashMap<>();
 	HashMap<Skill, Integer> fakeXpTracker = new HashMap<>();
 
 	void initialiseSkills(){
 		System.out.println("Initialising skills");
+		Integer currentSkillChildId = 1;
+
 		for (Skill skill : Skill.values()){
 			if (skill != Skill.OVERALL){
 				fakeXpTracker.put(skill, client.getSkillExperience(skill));
 				realXpTracker.put(skill, client.getSkillExperience(skill));
+
+				skillToChildId.put(skill, currentSkillChildId);
+				currentSkillChildId++;
 			}
 		}
 	}
@@ -38,7 +45,7 @@ public class Xpbooster extends Plugin
 	@Subscribe
 	public void onGameStateChanged(GameStateChanged event) {
 		GameState state = event.getGameState();
-		if (state == GameState.LOGGED_IN && fakeXpTracker.size() == 0) {
+		if (state == GameState.LOGGED_IN && fakeXpTracker.isEmpty()) {
 			initialiseSkills();
 		}
 	}
@@ -50,145 +57,66 @@ public class Xpbooster extends Plugin
 
 		if (skill == Skill.OVERALL) return;
 
-		int realpreviousxp = realXpTracker.get(skill);
-		int fakepreviousxp = fakeXpTracker.get(skill);
+		int realPreviousXp = realXpTracker.get(skill);
+		int fakePreviousXp = fakeXpTracker.get(skill);
 
-		int realcurrentxp = currentXp;
-		int realXpGained = realcurrentxp - realpreviousxp;
-		int fakecurrentxp;
+		int realCurrentXp = currentXp;
+		int realXpGained = realCurrentXp - realPreviousXp;
+		int fakeCurrentXp;
 
 		//For first startup when stats are changed from 0 to your current stat, couldn't be bothered to figure out a
 		//smarter (read less lazy) way of detecting this.
 		if (realXpGained > 1000){
-			fakecurrentxp = currentXp;
+			fakeCurrentXp = currentXp;
 		} else {
-			//normal operation
-			fakecurrentxp = fakepreviousxp + (realXpGained * 10000);
+			fakeCurrentXp = fakePreviousXp + (realXpGained * 10000);
 		}
 
-		realXpTracker.put(skill, realcurrentxp);
-		fakeXpTracker.put(skill, fakecurrentxp);
+		realXpTracker.put(skill, realCurrentXp);
+		fakeXpTracker.put(skill, fakeCurrentXp);
 	}
 
 	@Subscribe
 	public void onBeforeRender(BeforeRender tick)
 	{
-		System.out.println("real attack level: " + Experience.getLevelForXp(realXpTracker.get(Skill.ATTACK)));
-		System.out.println("fake attack level: " + Experience.getLevelForXp(fakeXpTracker.get(Skill.ATTACK)));
-		//Hope you enjoy this indentation
-		for (int i = 7995410; i < 7995417; i++){
-			Widget xp = client.getWidget(i);
-			if (xp != null) {
-				if (xp.getChildren() != null) {
-					for (Widget child : xp.getChildren()){
-						if (child != null) {
-							if (child.getText() != null) {
-								if (!child.getText().isEmpty())
-									if (!child.getText().endsWith("0000")) {
-										child.setText(child.getText() + "0000");
-									 	xp.setOriginalWidth(xp.getOriginalWidth() + 30);
-										//Surely one of these will revalidate it right?
-										xp.revalidate();
-										child.revalidate();
-										xp.getChildren()[1].revalidate();
-									}
-								}
-							}
-						}
-					}
-				}
-			}
+		final int firstWidgetId = 7995410;
+		final int lastWidgetId = 7995417;
 
-		for (Skill skill : Skill.values()) {
-			if (skill != Skill.OVERALL) {
-				updateSkillLevel(skill);
+		for (int widgetId = firstWidget; widgetId < lastWidgetId; widgetId++){
+			Widget xpWidget = client.getWidget(widgetId);
+
+			if (xpWidget == null || xpWidget.getChildren() == null) continue;
+
+			for (Widget child : xpWidget.getChildren()){
+				if (
+					child == null 
+					|| child.getText() == null 
+					|| child.getText().isEmpty() 
+					|| child.getText().endsWith("0000")
+				) {
+					continue;
+				} 
+
+				child.setText(child.getText() + "0000");
+				xpWidget.setOriginalWidth(xpWidget.getOriginalWidth() + 30);
+
+				//Surely one of these will revalidate it right?
+				xpWidget.revalidate();
+				child.revalidate();
+				xpWidget.getChildren()[1].revalidate();
 			}
 		}
+
+		Skill.values().stream().forEach(skill -> updateSkillLevel(skill));
 	}
 
 	private void updateSkillLevel(Skill skill)
 	{
-		int childId;
-		switch (skill)
-		{
-			case ATTACK:
-				childId = 1;
-				break;
-			case STRENGTH:
-				childId = 2;
-				break;
-			case DEFENCE:
-				childId = 3;
-				break;
-			case RANGED:
-				childId = 4;
-				break;
-			case PRAYER:
-				childId = 5;
-				break;
-			case MAGIC:
-				childId = 6;
-				break;
-			case RUNECRAFT:
-				childId = 7;
-				break;
-			case CONSTRUCTION:
-				childId = 8;
-				break;
-			case HITPOINTS:
-				childId = 9;
-				break;
-			case AGILITY:
-				childId = 10;
-				break;
-			case HERBLORE:
-				childId = 11;
-				break;
-			case THIEVING:
-				childId = 12;
-				break;
-			case CRAFTING:
-				childId = 13;
-				break;
-			case FLETCHING:
-				childId = 14;
-				break;
-			case SLAYER:
-				childId = 15;
-				break;
-			case HUNTER:
-				childId = 16;
-				break;
-			case MINING:
-				childId = 17;
-				break;
-			case SMITHING:
-				childId = 18;
-				break;
-			case FISHING:
-				childId = 19;
-				break;
-			case COOKING:
-				childId = 20;
-				break;
-			case FIREMAKING:
-				childId = 21;
-				break;
-			case WOODCUTTING:
-				childId = 22;
-				break;
-			case FARMING:
-				childId = 23;
-				break;
-			default:
-				return;
-		}
+		int childId = skillToChildId.get(skill);
+
 		//Snippet stolen from https://github.com/XrioBtw/effective-level
 		Widget skillWidget = client.getWidget(WidgetID.SKILLS_GROUP_ID, childId);
-		if (skillWidget == null)
-		{
-			return;
-		}
+		if (skillWidget == null) return;
 
 		Widget[] skillWidgetComponents = skillWidget.getDynamicChildren();
 		if (skillWidgetComponents.length >= 4)
