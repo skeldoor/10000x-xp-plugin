@@ -78,37 +78,35 @@ public class Xpbooster extends Plugin
 	@Subscribe
 	public void onBeforeRender(BeforeRender tick)
 	{
-		System.out.println("real attack level: " + Experience.getLevelForXp(realXpTracker.get(Skill.ATTACK)));
-		System.out.println("fake attack level: " + Experience.getLevelForXp(fakeXpTracker.get(Skill.ATTACK)));
-		//Hope you enjoy this indentation
-		for (int i = 7995410; i < 7995417; i++){
-			Widget xp = client.getWidget(i);
-			if (xp != null) {
-				if (xp.getChildren() != null) {
-					for (Widget child : xp.getChildren()){
-						if (child != null) {
-							if (child.getText() != null) {
-								if (!child.getText().isEmpty())
-									if (!child.getText().endsWith("0000")) {
-										child.setText(child.getText() + "0000");
-									 	xp.setOriginalWidth(xp.getOriginalWidth() + 30);
-										//Surely one of these will revalidate it right?
-										xp.revalidate();
-										child.revalidate();
-										xp.getChildren()[1].revalidate();
-									}
-								}
-							}
-						}
-					}
-				}
-			}
+		final int firstWidgetId = 7995410;
+		final int lastWidgetId = 7995417;
 
-		for (Skill skill : Skill.values()) {
-			if (skill != Skill.OVERALL) {
-				updateSkillLevel(skill);
+		for (int widgetId = firstWidget; widgetId < lastWidgetId; widgetId++){
+			Widget xpWidget = client.getWidget(widgetId);
+
+			if (xpWidget == null || xpWidget.getChildren() == null) continue;
+
+			for (Widget child : xpWidget.getChildren()){
+				if (
+					child == null 
+					|| child.getText() == null 
+					|| child.getText().isEmpty() 
+					|| child.getText().endsWith("0000")
+				) {
+					continue;
+				} 
+
+				child.setText(child.getText() + "0000");
+				xpWidget.setOriginalWidth(xpWidget.getOriginalWidth() + 30);
+
+				//Surely one of these will revalidate it right?
+				xpWidget.revalidate();
+				child.revalidate();
+				xpWidget.getChildren()[1].revalidate();
 			}
 		}
+
+		Skill.values().stream().forEach(skill -> updateSkillLevel(skill));
 	}
 
 	private void updateSkillLevel(Skill skill)
