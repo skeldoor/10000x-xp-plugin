@@ -22,6 +22,8 @@ public class Xpbooster extends Plugin
 
 	private HashMap<Skill, Integer> skillToChildId = new HashMap<>();
 
+	private final String TOTAL_LEVEL_TEXT_PREFIX = "Total level:<br>";
+
 	HashMap<Skill, Integer> realXpTracker = new HashMap<>();
 	HashMap<Skill, Integer> fakeXpTracker = new HashMap<>();
 
@@ -43,7 +45,7 @@ public class Xpbooster extends Plugin
 	@Subscribe
 	public void onGameStateChanged(GameStateChanged event) {
 		GameState state = event.getGameState();
-		if (state == GameState.LOGGED_IN && fakeXpTracker.size() == 0) {
+		if (state == GameState.LOGGED_IN && fakeXpTracker.isEmpty()) {
 			initialiseSkills();
 		}
 	}
@@ -55,24 +57,23 @@ public class Xpbooster extends Plugin
 
 		if (skill == Skill.OVERALL) return;
 
-		int realpreviousxp = realXpTracker.get(skill);
-		int fakepreviousxp = fakeXpTracker.get(skill);
+		int realPreviousXp = realXpTracker.get(skill);
+		int fakePreviousXp = fakeXpTracker.get(skill);
 
-		int realcurrentxp = currentXp;
-		int realXpGained = realcurrentxp - realpreviousxp;
-		int fakecurrentxp;
+		int realCurrentXp = currentXp;
+		int realXpGained = realCurrentXp - realPreviousXp;
+		int fakeCurrentXp;
 
 		//For first startup when stats are changed from 0 to your current stat, couldn't be bothered to figure out a
 		//smarter (read less lazy) way of detecting this.
 		if (realXpGained > 1000){
-			fakecurrentxp = currentXp;
+			fakeCurrentXp = currentXp;
 		} else {
-			//normal operation
-			fakecurrentxp = fakepreviousxp + (realXpGained * 10000);
+			fakeCurrentXp = fakePreviousXp + (realXpGained * 10000);
 		}
 
-		realXpTracker.put(skill, realcurrentxp);
-		fakeXpTracker.put(skill, fakecurrentxp);
+		realXpTracker.put(skill, realCurrentXp);
+		fakeXpTracker.put(skill, fakeCurrentXp);
 	}
 
 	@Subscribe
