@@ -20,17 +20,22 @@ public class Xpbooster extends Plugin
 	@Inject
 	private Client client;
 
-	private static final String TOTAL_LEVEL_TEXT_PREFIX = "Total level:<br>";
+	private HashMap<Skill, Integer> skillToChildId = new HashMap<>();
 
 	HashMap<Skill, Integer> realXpTracker = new HashMap<>();
 	HashMap<Skill, Integer> fakeXpTracker = new HashMap<>();
 
 	void initialiseSkills(){
 		System.out.println("Initialising skills");
+		Integer currentSkillChildId = 1;
+
 		for (Skill skill : Skill.values()){
 			if (skill != Skill.OVERALL){
 				fakeXpTracker.put(skill, client.getSkillExperience(skill));
 				realXpTracker.put(skill, client.getSkillExperience(skill));
+
+				skillToChildId.put(skill, currentSkillChildId);
+				currentSkillChildId++;
 			}
 		}
 	}
@@ -108,87 +113,11 @@ public class Xpbooster extends Plugin
 
 	private void updateSkillLevel(Skill skill)
 	{
-		int childId;
-		switch (skill)
-		{
-			case ATTACK:
-				childId = 1;
-				break;
-			case STRENGTH:
-				childId = 2;
-				break;
-			case DEFENCE:
-				childId = 3;
-				break;
-			case RANGED:
-				childId = 4;
-				break;
-			case PRAYER:
-				childId = 5;
-				break;
-			case MAGIC:
-				childId = 6;
-				break;
-			case RUNECRAFT:
-				childId = 7;
-				break;
-			case CONSTRUCTION:
-				childId = 8;
-				break;
-			case HITPOINTS:
-				childId = 9;
-				break;
-			case AGILITY:
-				childId = 10;
-				break;
-			case HERBLORE:
-				childId = 11;
-				break;
-			case THIEVING:
-				childId = 12;
-				break;
-			case CRAFTING:
-				childId = 13;
-				break;
-			case FLETCHING:
-				childId = 14;
-				break;
-			case SLAYER:
-				childId = 15;
-				break;
-			case HUNTER:
-				childId = 16;
-				break;
-			case MINING:
-				childId = 17;
-				break;
-			case SMITHING:
-				childId = 18;
-				break;
-			case FISHING:
-				childId = 19;
-				break;
-			case COOKING:
-				childId = 20;
-				break;
-			case FIREMAKING:
-				childId = 21;
-				break;
-			case WOODCUTTING:
-				childId = 22;
-				break;
-			case FARMING:
-				childId = 23;
-				break;
-			default:
-				return;
-		}
+		int childId = skillToChildId.get(skill);
+
 		//Snippet stolen from https://github.com/XrioBtw/effective-level
 		Widget skillWidget = client.getWidget(WidgetID.SKILLS_GROUP_ID, childId);
-		if (skillWidget == null)
-		{
-			return;
-		}
+		if (skillWidget == null) return;
 
 		Widget[] skillWidgetComponents = skillWidget.getDynamicChildren();
 		if (skillWidgetComponents.length >= 4)
